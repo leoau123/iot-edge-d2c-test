@@ -1,0 +1,94 @@
+{
+  "$schema-template": "1.0.0",
+  "modulesContent": {
+    "$edgeAgent": {
+      "properties.desired": {
+        "schemaVersion": "1.0",
+        "runtime": {
+          "type": "docker",
+          "settings": {
+            "minDockerVersion": "v1.25",
+            "loggingOptions": "",
+            "registryCredentials": {
+              "tgcontainerea": {
+                "username": "$CONTAINER_REGISTRY_USERNAME_tgcontainerea",
+                "password": "$CONTAINER_REGISTRY_PASSWORD_tgcontainerea",
+                "address": "tgcontainerea.azurecr.io"
+              }
+            }
+          }
+        },
+        "systemModules": {
+          "edgeAgent": {
+            "type": "docker",
+            "settings": {
+              "image": "mcr.microsoft.com/azureiotedge-agent:1.0.5",
+              "createOptions": {}
+            }
+          },
+          "edgeHub": {
+            "type": "docker",
+            "status": "running",
+            "restartPolicy": "always",
+            "settings": {
+              "image": "mcr.microsoft.com/azureiotedge-hub:1.0.5",
+              "createOptions": {
+                "HostConfig": {
+                  "Binds": ["/iot_queue:/iot_queue"],
+                  "PortBindings": {
+                    "5671/tcp": [
+                      {
+                        "HostPort": "5671"
+                      }
+                    ],
+                    "8883/tcp": [
+                      {
+                        "HostPort": "8883"
+                      }
+                    ],
+                    "443/tcp": [
+                      {
+                        "HostPort": "443"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "env": {
+            "UpstreamProtocol": {
+              "value": "Mqtt"
+            },
+            "storageFolder": {
+              "value": "/iot_queue"
+            }
+          }
+        },
+        "modules": {
+          "TestD2C": {
+            "version": "1.0",
+            "type": "docker",
+            "status": "running",
+            "restartPolicy": "always",
+            "settings": {
+              "image": "${MODULES.TestD2C}",
+              "createOptions": {}
+            }
+          }
+        }
+      }
+    },
+    "$edgeHub": {
+      "properties.desired": {
+        "schemaVersion": "1.0",
+        "routes": {
+          "TestD2CToIoTHub": "FROM /messages/modules/TestD2C/outputs/output1 INTO $upstream"
+        },
+        "storeAndForwardConfiguration": {
+          "timeToLiveSecs": 86400
+        }
+      }
+    }
+  }
+}
